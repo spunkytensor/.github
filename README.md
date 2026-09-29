@@ -44,7 +44,7 @@ only evidence-backed coverage claims. Do not add a passing badge until the calle
 is enabled and its scans have succeeded.
 
 Validate workflow changes with `actionlint .github/workflows/trivy.yml` and
-`uv run --with-requirements requirements-dev.txt python -m unittest discover -s tests -v` (requires Bash and
+`uv run --with-requirements requirements.txt python -m unittest discover -s tests -v` (requires Bash and
 jq). The tests execute the workflow's own validation/gate scripts against passing,
 failing, empty, and malformed inputs. They do not replace live scanner or hosted
 Actions integration tests.
