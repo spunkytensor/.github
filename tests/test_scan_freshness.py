@@ -1,4 +1,6 @@
 import datetime as dt
+import json
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -12,6 +14,16 @@ class FreshnessTests(unittest.TestCase):
     def run_at(self, age, conclusion="success", status="completed"):
         return {"status": status, "conclusion": conclusion,
                 "created_at": (self.now - age).isoformat()}
+
+    def run_local(self, data):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json") as source:
+            json.dump(data, source)
+            source.flush()
+            with patch("scripts.check_scan_freshness.api") as api, \
+                    patch("builtins.print") as output, patch.dict("os.environ", {}, clear=True):
+                result = main(["--input", source.name])
+        api.assert_not_called()
+        return result, "\n".join(str(call.args[0]) for call in output.call_args_list)
 
     def test_threshold_uses_scan_start_not_completion(self):
         fresh = self.run_at(dt.timedelta(hours=36))
@@ -72,7 +84,48 @@ class FreshnessTests(unittest.TestCase):
 
     def test_empty_organization_fails_closed(self):
         with patch("scripts.check_scan_freshness.api", return_value=[[]]), patch("builtins.print"), patch.dict("os.environ", {}, clear=True):
-            self.assertEqual(main(), 1)
+            self.assertEqual(main(["--github-org", "spunkytensor"]), 1)
+
+    def test_local_mode_is_standalone_and_fresh_boundary_passes(self):
+        now = dt.datetime.now(dt.timezone.utc)
+        run = {"status": "completed", "conclusion": "success",
+               "created_at": (now - dt.timedelta(hours=35)).isoformat()}
+        data = {"repositories": [{"full_name": "private/example", "checks": [
+            {"path": "security.yml", "state": "active", "latest": run, "success": run}
+        ]}]}
+        result, report = self.run_local(data)
+        self.assertEqual(result, 0)
+        self.assertIn("OK: successful scheduled run within 36 hours", report)
+        self.assertIn("no discovery performed", report)
+
+    def test_local_failure_and_missing_checks_fail_closed(self):
+        now = dt.datetime.now(dt.timezone.utc)
+        success = {"status": "completed", "conclusion": "success",
+                   "created_at": (now - dt.timedelta(hours=1)).isoformat()}
+        failed = {**success, "conclusion": "failure"}
+        data = {"repositories": [{"full_name": "owner/example", "checks": [
+            {"path": "failed.yml", "state": "active", "latest": failed, "success": success},
+            {"path": "missing.yml", "state": "active", "latest": None, "success": None},
+        ]}]}
+        result, report = self.run_local(data)
+        self.assertEqual(result, 1)
+        self.assertIn("FAILED:", report)
+        self.assertIn("MISSING:", report)
+
+    def test_local_empty_malformed_and_future_inputs_fail_closed(self):
+        future = {"status": "completed", "conclusion": "success",
+                  "created_at": (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=1)).isoformat()}
+        invalid = [
+            {"repositories": []},
+            {"repositories": [{"full_name": "owner/example", "checks": []}]},
+            {"repositories": [{"full_name": "owner/example", "checks": [
+                {"path": "security.yml", "state": "active", "latest": future, "success": future}
+            ]}]},
+        ]
+        for data in invalid:
+            with self.subTest(data=data):
+                result, _ = self.run_local(data)
+                self.assertEqual(result, 1)
 
 
 if __name__ == "__main__":

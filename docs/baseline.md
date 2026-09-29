@@ -1,4 +1,4 @@
-# Public open-source baseline
+# Public and private repository baseline
 
 These are adoption requirements, not a statement of current compliance. Each
 project records its maintainer, supported release lines, distributed artifacts,
@@ -6,10 +6,13 @@ baseline commit, and any coverage gaps in its own documentation.
 
 ## GitHub administration
 
-Enable dependency graph, Dependabot alerts and security updates, secret scanning
-and push protection, private vulnerability reporting, and CodeQL for supported
-languages. Add dependency review on pull requests. Use repository-local Dependabot
-configuration for action and ecosystem updates; it is not inherited from here.
+GitHub Actions is allowed; paid private-repository security services are not a
+baseline prerequisite. Use standalone Trivy for dependency vulnerabilities and
+language-appropriate free local analyzers (Bandit for this repository's Python).
+Hosted CodeQL and dependency review are not required. Free GitHub features such as
+Dependabot may complement the baseline but must not be needed to run its scripts.
+Use repository-local Dependabot configuration for updates; it is not inherited.
+Actions minutes and storage can incur usage charges for private repositories.
 
 Protect default branches with required checks and review. Protect workflow and
 policy changes with appropriate code ownership. Require maintainer 2FA and review
@@ -88,10 +91,13 @@ the license of the top-level project covers third-party components.
 
 ## Release evidence and public presentation
 
-Publish artifact checksums, both SBOM formats, required notices, and build
+Distribute artifact checksums, both SBOM formats, required notices, and build
 provenance/attestations with releases. GitHub Actions artifacts are temporary
 diagnostics, not durable release evidence. Bind attestations to exact distributed
 digests; do not claim a SLSA level without verifying its requirements.
+For private projects, keep all evidence in access-controlled storage. Do not
+require GitHub's paid private attestation features; use standalone provenance
+generation/signing where needed.
 
 Each README links to the project security policy, supported releases, notices, and
 SBOM downloads using the same terminology. OpenSSF Scorecard is a useful periodic
