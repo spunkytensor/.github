@@ -5,7 +5,7 @@ new workflow's coverage has been compared and verified.
 
 ## Source scanning
 
-Add this caller as `.github/workflows/security.yml` in the participating project.
+Add this caller as `.github/workflows/public-repo-security.yml` in the participating project.
 Replace `REVIEWED_FULL_COMMIT_SHA` with the published baseline's 40-character
 commit SHA and change `main` if the default branch differs.
 
@@ -85,8 +85,10 @@ VEX support are deliberately not enabled in this first version.
 - Integrate full inventory reconciliation, attribution generation, and durable
   release assets/attestations. The reusable scan alone does not complete these.
 - Record the owner, supported releases, baseline SHA, coverage gaps, and last
-  successful nightly scan. Connect central stale-scan alerting before claiming
-  continuously monitored coverage.
+  successful nightly scan. The central freshness reporter discovers this caller
+  path across all active public repositories and flags missing or stale scheduled
+  successes. Subscribe to failed Actions runs and verify the reporter itself
+  remains active before claiming continuously monitored coverage.
 
 Publishing this repository activates supported community defaults for repositories
 without local overrides, including private repositories under this owner. It does

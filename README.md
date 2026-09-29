@@ -12,9 +12,10 @@ Critical vulnerabilities, including those without fixes. It retains all severiti
 in its JSON report and rejects an empty package inventory.
 
 Project-specific inventory completeness checks, notice generation, release
-attestations, GitHub settings, and organization-wide scan freshness monitoring
-still need integration. Existing security checks must remain until replacement
-coverage has been demonstrated.
+attestations, and GitHub settings still need integration. Existing security checks
+must remain until replacement coverage has been demonstrated. The read-only
+organization freshness report detects missing, disabled, failed, and stale
+scheduled checks; it does not certify complete baseline compliance.
 
 ## What is shared
 
@@ -43,7 +44,46 @@ only evidence-backed coverage claims. Do not add a passing badge until the calle
 is enabled and its scans have succeeded.
 
 Validate workflow changes with `actionlint .github/workflows/trivy.yml` and
-`uv run --with pyyaml python -m unittest discover -s tests -v` (requires Bash and
+`uv run --with-requirements requirements.txt python -m unittest discover -s tests -v` (requires Bash and
 jq). The tests execute the workflow's own validation/gate scripts against passing,
 failing, empty, and malformed inputs. They do not replace live scanner or hosted
 Actions integration tests.
+
+## This repository's security profile
+
+Maintainers: Spunky Tensor organization maintainers. Fixes target `main`; older
+workflow pins are not independently maintained, so consumers must review updates.
+No response-time or security-support SLA is promised.
+
+`.github/workflows/public-repo-security.yml` tests this repository's current shared
+workflow, inventories the pinned Python test dependency, runs dependency review
+on PRs, and analyzes Python with CodeQL. Scheduled checks run at 10:07 UTC daily.
+The source SBOM covers test dependencies, not every tool on the hosted runner.
+No compiled application or container is distributed here. The source archive
+contains [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.txt).
+
+`.github/workflows/coverage.yml` checks every non-archived public `spunkytensor`
+repository at 12:17 UTC. It requires the standardized caller path
+`.github/workflows/public-repo-security.yml` and a successful **scheduled** run
+within 36 hours. It also checks Reel Maestro's retained RustSec/container workflows
+and Reel Video's retained runtime CVE workflow. Keep `EXTRA_WORKFLOWS` in the
+reporter updated when separate nightly security workflows change. A passing shared
+source scan cannot mask a failure in those runtime checks.
+PR/manual successes cannot hide a broken schedule. Its Actions
+summary links to relevant runs and exits nonzero for gaps, including repositories
+whose adoption PR has not merged yet. Failed runs notify subscribed maintainers
+through normal GitHub Actions notifications; it does not send external alerts or
+write issues. The reporter itself is subject to GitHub schedule delays/inactivity;
+maintainers must watch its freshness too.
+
+Private reporting, branch protection, required-check selection, CodeQL enablement,
+secret protection, and access/2FA enforcement remain administrator work. Report
+security concerns privately using a confirmed maintainer channel; if no channel is
+available, request one without publishing vulnerability details. Do not mistake
+this pending private-reporting setup for an established confidential intake route.
+
+## License
+
+Copyright 2026 Spunky Tensor. This repository's original material is licensed
+under Apache-2.0; third-party material retains its own license. This does not
+change the license of any repository that consumes these workflows or defaults.
