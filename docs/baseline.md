@@ -66,7 +66,10 @@ validation mechanism must be reviewed before enabling exceptions.
 Track last successful scans and failures across adopted repositories; flag scans
 older than 36 hours. GitHub schedules can be delayed or dropped and public-repo
 schedules can disable after 60 days of inactivity. A nightly cron alone is not a
-freshness guarantee. Central reporting and stale-scan alerting remain rollout work.
+freshness guarantee. This repository's `coverage.yml` reports scheduled-workflow
+health across public repositories, including missing adoption. Subscribe to its
+failure notifications and check its own freshness; this is not an independently
+hosted scheduler watchdog or a complete compliance audit.
 
 ## Licenses and third-party acknowledgments
 

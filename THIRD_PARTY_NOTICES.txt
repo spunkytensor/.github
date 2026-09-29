@@ -1,0 +1,36 @@
+Spunky Tensor shared public-repository automation
+
+This repository distributes first-party workflow definitions, documentation and
+Python scripts. It does not bundle third-party executables or Python packages.
+The following direct Python dependency is installed only to run its tests:
+
+PyYAML 6.0.3 — https://github.com/yaml/pyyaml — MIT
+Upstream license: https://github.com/yaml/pyyaml/blob/6.0.3/LICENSE
+
+Copyright (c) 2017-2021 Ingy döt Net
+Copyright (c) 2006-2016 Kirill Simonov
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+GitHub Actions, Trivy, actionlint, Python, Bash, jq and the hosted runner image
+are external CI tooling, not redistributed in this repository's source archive.
+Their versions/pins are recorded in the workflow files; their upstream licenses
+continue to apply. The source dependency SBOM is not an inventory of the entire
+GitHub-hosted runner or of every transitive action dependency. A future binary or
+container distribution must inventory and attribute what it actually bundles.
