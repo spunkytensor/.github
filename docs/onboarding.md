@@ -2,6 +2,9 @@
 
 Start with a pilot repository. Do not remove existing scans or notices until the
 new workflow's coverage has been compared and verified.
+The same caller supports public and private source repositories, with no paid
+GitHub security add-ons. Actions minutes/storage still follow your billing plan.
+For standalone commands and private monitoring, see the [README](../README.md).
 
 ## Source scanning
 
@@ -25,6 +28,8 @@ permissions:
 jobs:
   source:
     uses: spunkytensor/.github/.github/workflows/trivy.yml@REVIEWED_FULL_COMMIT_SHA
+    with:
+      baseline-sha: REVIEWED_FULL_COMMIT_SHA
 ```
 
 The example runs nightly at 09:37 UTC (01:37 PST / 02:37 PDT), off the hour.
@@ -45,6 +50,7 @@ Add another call in the project's scheduled/release workflow:
   runtime:
     uses: spunkytensor/.github/.github/workflows/trivy.yml@REVIEWED_FULL_COMMIT_SHA
     with:
+      baseline-sha: REVIEWED_FULL_COMMIT_SHA
       image-ref: ghcr.io/spunkytensor/PROJECT@sha256:RELEASE_MANIFEST_DIGEST
       artifact-name: security-runtime-amd64
 ```
@@ -72,11 +78,14 @@ VEX support are deliberately not enabled in this first version.
 
 ## Before claiming adoption
 
-- Confirm a private vulnerability reporting route and the project's security
-  policy. Enable private reporting in GitHub settings; a Markdown file cannot do
-  this. Publish a shared SECURITY.md only after its route has been confirmed.
-- Enable the GitHub features in [the baseline](baseline.md), then verify required
-  check names from real workflow runs before applying branch rules.
+- Confirm a confidential vulnerability reporting route and the project's security
+  policy. GitHub private reporting is optional where available; a confirmed private
+  maintainer channel also works. Publish a shared SECURITY.md only after its route
+  has been confirmed.
+- No Dependency Graph, dependency-review, hosted CodeQL, or Advanced Security
+  enablement is required. Verify check names from real workflow runs before applying
+  branch rules. Remove service-dependent jobs from callers only with an explicit
+  review of replacement coverage; updating the shared SHA does not remove them.
 - Keep local licenses/notices and project-specific legal review. Existing local
   community files override the organization defaults; remove them only after
   reviewing the information that would be lost.

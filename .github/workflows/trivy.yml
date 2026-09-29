@@ -3,8 +3,12 @@ name: Spunky Tensor security
 on:
   workflow_call:
     inputs:
+      baseline-sha:
+        description: Full reviewed commit SHA of shared scripts (same pin as this workflow)
+        type: string
+        required: true
       image-ref:
-        description: Public image pinned to a platform manifest digest; empty scans source
+        description: Image pinned to a platform manifest digest; empty scans source
         type: string
         default: ''
       artifact-name:
@@ -19,77 +23,36 @@ jobs:
   scan:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    env:
-      IMAGE_REF: ${{ inputs.image-ref }}
-    defaults:
-      run:
-        shell: bash
     steps:
-      - name: Validate image identity
-        run: |
-          echo "REPORT_DIR=$RUNNER_TEMP/security-reports" >> "$GITHUB_ENV"
-          echo "TRIVY_CACHE_DIR=$RUNNER_TEMP/trivy-cache" >> "$GITHUB_ENV"
-          if [[ -n "$IMAGE_REF" && ! "$IMAGE_REF" =~ ^[^[:space:]]+@sha256:[a-f0-9]{64}$ ]]; then
-            echo '::error::image-ref must identify a public image by sha256 digest'
-            exit 1
-          fi
-
+      - name: Validate baseline pin
+        env:
+          BASELINE_SHA: ${{ inputs.baseline-sha }}
+        run: '[[ "$BASELINE_SHA" =~ ^[a-f0-9]{40}$ ]]'
+      - name: Checkout shared tools
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: spunkytensor/.github
+          ref: ${{ inputs.baseline-sha }}
+          path: baseline
+          persist-credentials: false
       - name: Checkout caller source
         if: inputs.image-ref == ''
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: false
           path: source
-
+          persist-credentials: false
       - name: Install pinned Trivy
         uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
         with:
           version: v0.74.0
           cache: false
-
-      - name: Inventory and scan
-        working-directory: ${{ runner.temp }}
+      - name: Run standalone scan
         env:
-          CALLER_REPOSITORY: ${{ github.repository }}
-          CALLER_SHA: ${{ github.sha }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          IMAGE_REF: ${{ inputs.image-ref }}
         run: |
-          mkdir -p "$REPORT_DIR"
-          jq -n --arg repository "$CALLER_REPOSITORY" --arg commit "$CALLER_SHA" \
-            --arg image "$IMAGE_REF" --arg run "$RUN_URL" \
-            '{repository: $repository, event_commit: $commit, image: $image, run: $run}' \
-            > "$REPORT_DIR/subject.json"
-          target=(fs --include-dev-deps "$GITHUB_WORKSPACE/source")
-          if [[ -n "$IMAGE_REF" ]]; then
-            target=(image --image-src remote "$IMAGE_REF")
-          fi
-          # A fresh cache per job refreshes the database; no caller config/ignores.
-          trivy "${target[@]}" --scanners vuln --list-all-pkgs \
-            --ignorefile /dev/null --ignore-unfixed=false --exit-code 0 \
-            --format json --output "$REPORT_DIR/trivy.json"
-          trivy version --format json > "$REPORT_DIR/trivy-version.json"
-
-      - name: Generate SPDX and CycloneDX evidence
-        working-directory: ${{ runner.temp }}
-        run: |
-          trivy convert --format spdx-json --output "$REPORT_DIR/sbom.spdx.json" "$REPORT_DIR/trivy.json"
-          trivy convert --format cyclonedx --output "$REPORT_DIR/sbom.cdx.json" "$REPORT_DIR/trivy.json"
-          (cd "$REPORT_DIR" && sha256sum ./*.json > SHA256SUMS)
-
-      - name: Reject empty inventories and High or Critical findings
-        working-directory: ${{ runner.temp }}
-        run: |
-          if ! jq -e '[.Results[]?.Packages[]?] | length > 0' "$REPORT_DIR/trivy.json" > /dev/null; then
-            echo '::error::No packages detected; inventory coverage must be reviewed'
-            exit 1
-          fi
-          count=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' "$REPORT_DIR/trivy.json")
-          echo "High/Critical findings: $count"
-          if [[ "$count" -gt 0 ]]; then
-            echo '::error::High or Critical vulnerabilities require remediation'
-            exit 1
-          fi
-
+          target=(source "$GITHUB_WORKSPACE/source")
+          if [[ -n "$IMAGE_REF" ]]; then target=(image "$IMAGE_REF"); fi
+          bash baseline/scripts/scan.sh "${target[@]}" "$RUNNER_TEMP/security-reports"
       - name: Retain evidence even when the gate fails
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

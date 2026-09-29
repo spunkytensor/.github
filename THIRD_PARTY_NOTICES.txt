@@ -2,7 +2,11 @@ Spunky Tensor shared public-repository automation
 
 This repository distributes first-party workflow definitions, documentation and
 Python scripts. It does not bundle third-party executables or Python packages.
-The following direct Python dependency is installed only to run its tests:
+The following direct Python dependencies are external test/security tooling:
+
+Bandit 1.8.6 — https://github.com/PyCQA/bandit — Apache-2.0
+Upstream license: https://github.com/PyCQA/bandit/blob/1.8.6/LICENSE
+Bandit and its dependencies are installed in CI, not bundled in this archive.
 
 PyYAML 6.0.3 — https://github.com/yaml/pyyaml — MIT
 Upstream license: https://github.com/yaml/pyyaml/blob/6.0.3/LICENSE
