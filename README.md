@@ -65,7 +65,11 @@ contains [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.txt).
 `.github/workflows/coverage.yml` checks every non-archived public `spunkytensor`
 repository at 12:17 UTC. It requires the standardized caller path
 `.github/workflows/public-repo-security.yml` and a successful **scheduled** run
-within 36 hours. PR/manual successes cannot hide a broken schedule. Its Actions
+within 36 hours. It also checks Reel Maestro's retained RustSec/container workflows
+and Reel Video's retained runtime CVE workflow. Keep `EXTRA_WORKFLOWS` in the
+reporter updated when separate nightly security workflows change. A passing shared
+source scan cannot mask a failure in those runtime checks.
+PR/manual successes cannot hide a broken schedule. Its Actions
 summary links to relevant runs and exits nonzero for gaps, including repositories
 whose adoption PR has not merged yet. Failed runs notify subscribed maintainers
 through normal GitHub Actions notifications; it does not send external alerts or

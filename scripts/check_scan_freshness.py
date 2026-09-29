@@ -10,6 +10,12 @@ from urllib.parse import quote
 
 WORKFLOW_PATH = ".github/workflows/public-repo-security.yml"
 MAX_AGE = dt.timedelta(hours=36)
+# Retained nightly checks complement the shared caller. A clean source scan must
+# not hide a failed RustSec audit or runtime-image scan in a separate workflow.
+EXTRA_WORKFLOWS = {
+    "spunkytensor/reel-maestro": [".github/workflows/security.yml", ".github/workflows/container.yml"],
+    "spunkytensor/reel-video": [".github/workflows/security.yml"],
+}
 
 
 def api(endpoint, paginate=False):
@@ -38,13 +44,8 @@ def assess(workflow, latest, success, now):
     return "OK: successful scheduled run within 36 hours"
 
 
-def inspect_repository(repo, now):
+def inspect_workflow(repo, workflow, now):
     name = repo["full_name"]
-    pages = api(f"repos/{name}/actions/workflows?per_page=100", paginate=True)
-    workflow = next(
-        (workflow for page in pages for workflow in page["workflows"]
-         if workflow["path"] == WORKFLOW_PATH), None
-    )
     if not workflow or workflow["state"] != "active":
         return assess(workflow, None, None, now), repo["html_url"] + "/actions"
     branch = quote(repo["default_branch"], safe="")
@@ -59,6 +60,13 @@ def inspect_repository(repo, now):
     )
 
 
+def inspect_repository(repo, now):
+    pages = api(f"repos/{repo['full_name']}/actions/workflows?per_page=100", paginate=True)
+    workflows = {workflow["path"]: workflow for page in pages for workflow in page["workflows"]}
+    required = [WORKFLOW_PATH, *EXTRA_WORKFLOWS.get(repo["full_name"], [])]
+    return [(path, *inspect_workflow(repo, workflows.get(path), now)) for path in required]
+
+
 def main():
     now = dt.datetime.now(dt.timezone.utc)
     pages = api("orgs/spunkytensor/repos?type=public&per_page=100", paginate=True)
@@ -69,15 +77,16 @@ def main():
              "This reports scheduled workflow health, not inventory completeness,",
              "license compliance, or a guarantee that CVEs are absent. Content-only",
              "profiles run content checks instead of dependency scans.", "",
-             "| Repository | Scheduled check |", "| --- | --- |"]
+             "| Repository | Workflow | Scheduled check |", "| --- | --- | --- |"]
     failures = 0
     for repo in repos:
         try:
-            status, url = inspect_repository(repo, now)
+            results = inspect_repository(repo, now)
         except (subprocess.CalledProcessError, KeyError, ValueError):
-            status, url = "ERROR: repository status could not be verified", repo["html_url"]
-        failures += not status.startswith("OK:")
-        lines.append(f"| [{repo['name']}]({url}) | {status} |")
+            results = [("unknown", "ERROR: repository status could not be verified", repo["html_url"])]
+        for path, status, url in results:
+            failures += not status.startswith("OK:")
+            lines.append(f"| [{repo['name']}]({url}) | `{path}` | {status} |")
     if not repos:
         failures += 1
         lines.append("\nERROR: no public repositories were returned; coverage is unknown.")

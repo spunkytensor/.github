@@ -39,7 +39,7 @@ class FreshnessTests(unittest.TestCase):
         with patch("scripts.check_scan_freshness.api", return_value=[{"workflows": [
             {"path": ".github/workflows/trivy.yml", "state": "active"}
         ]}]):
-            status, _ = inspect_repository(repo, self.now)
+            _, status, _ = inspect_repository(repo, self.now)[0]
         self.assertTrue(status.startswith("MISSING:"))
 
     def test_query_is_default_branch_and_scheduled_only(self):
@@ -48,10 +48,27 @@ class FreshnessTests(unittest.TestCase):
             [{"workflows": [{"path": ".github/workflows/public-repo-security.yml", "state": "active", "id": 42}]}],
             {"workflow_runs": []}, {"workflow_runs": []},
         ]) as api:
-            status, _ = inspect_repository(repo, self.now)
+            _, status, _ = inspect_repository(repo, self.now)[0]
         self.assertTrue(status.startswith("MISSING:"))
         self.assertIn("branch=release%2Fmain&event=schedule", api.call_args_list[1].args[0])
         self.assertIn("status=success", api.call_args_list[2].args[0])
+
+    def test_source_success_does_not_hide_separate_runtime_failure(self):
+        repo = {"full_name": "spunkytensor/reel-video", "html_url": "https://github.com/spunkytensor/reel-video", "default_branch": "main"}
+        success = {**self.run_at(dt.timedelta(hours=1)), "html_url": "https://github.com/example/success"}
+        failed = {**self.run_at(dt.timedelta(minutes=30), conclusion="failure"), "html_url": "https://github.com/example/failure"}
+        with patch("scripts.check_scan_freshness.api", side_effect=[
+            [{"workflows": [
+                {"path": ".github/workflows/public-repo-security.yml", "state": "active", "id": 42},
+                {"path": ".github/workflows/security.yml", "state": "active", "id": 43},
+            ]}],
+            {"workflow_runs": [success]}, {"workflow_runs": [success]},
+            {"workflow_runs": [failed]}, {"workflow_runs": [success]},
+        ]):
+            results = inspect_repository(repo, self.now)
+        self.assertEqual(len(results), 2)
+        self.assertTrue(results[0][1].startswith("OK:"))
+        self.assertTrue(results[1][1].startswith("FAILED:"))
 
     def test_empty_organization_fails_closed(self):
         with patch("scripts.check_scan_freshness.api", return_value=[[]]), patch("builtins.print"), patch.dict("os.environ", {}, clear=True):
