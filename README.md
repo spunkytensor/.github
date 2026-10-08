@@ -75,6 +75,24 @@ CodeQL jobs. Required-check rules must be updated if check names change.
 
 ## Development
 
+### Amp orbs
+
+`.agents/setup` prepares Python 3.12, the dependencies in `requirements.txt`,
+actionlint 1.7.12, and Trivy 0.74.0. It verifies downloaded tool checksums and reuses
+installed dependencies on warm runs. The environment lives outside the checkout
+at `~/.cache/amp/spunkytensor-baseline` so source scans do not inventory the
+development environment. New login shells in this checkout automatically use it.
+Run `.agents/setup` again after changing requirements; no manual activation is
+needed in subsequent login shells.
+
+`.agents/resume` checks that the installed tools remain available without network
+access or installs. No services, tokens, or authentication are needed for setup.
+Vulnerability databases are deliberately not cached by setup: each scan still
+downloads a fresh database. Tool downloads require internet access. Setup targets
+Amp's x64 Debian orb template, including its preinstalled `uv`.
+
+### Local checks
+
 ```sh
 python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v

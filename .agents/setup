@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+tools="$HOME/.cache/amp/spunkytensor-baseline"
+mkdir -p "$tools/bin"
+
+step() {
+  local started=$SECONDS
+  printf '\n==> %s\n' "$*"
+  "$@"
+  printf 'Completed in %ss\n' "$((SECONDS - started))"
+}
+
+# These are supplied by the orb template; install only missing system packages.
+packages=()
+for package in curl ca-certificates jq coreutils tar; do
+  if ! dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -qx 'install ok installed'; then
+    packages+=("$package")
+  fi
+done
+if ((${#packages[@]})); then
+  step sudo apt-get update
+  step sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y "${packages[@]}"
+fi
+command -v uv >/dev/null
+[[ $(uname -m) == x86_64 ]] || { echo 'Pinned tools require an x64 orb' >&2; exit 1; }
+
+step uv python install 3.12
+if [[ ! -x "$tools/venv/bin/python" ]]; then
+  step uv venv --python 3.12 "$tools/venv"
+fi
+step uv pip install --python "$tools/venv/bin/python" --only-binary=:all: -r "$repo_root/requirements.txt"
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+install_tool() {
+  local name=$1 version=$2 url=$3 checksum=$4
+  if [[ -x "$tools/bin/$name" ]] && "$tools/bin/$name" --version | head -n 1 | grep -Fxq "$version"; then
+    echo "$name already installed: $version"
+    return
+  fi
+  curl --fail --silent --show-error --location --retry 3 --connect-timeout 15 --max-time 120 \
+    "$url" --output "$work/$name.tar.gz"
+  echo "$checksum  $work/$name.tar.gz" | sha256sum --check
+  tar -xzf "$work/$name.tar.gz" -C "$work" "$name"
+  install -m 0755 "$work/$name" "$tools/bin/$name"
+}
+
+# Match CI and scripts/scan.sh. Checksums are from the official release archives.
+step install_tool actionlint '1.7.12' \
+  https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+  8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+step install_tool trivy 'Version: 0.74.0' \
+  https://github.com/aquasecurity/trivy/releases/download/v0.74.0/trivy_0.74.0_Linux-64bit.tar.gz \
+  2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a
+
+# Persist the whole venv environment for Amp and other non-interactive login shells.
+profile_marker="# Amp baseline tools: $repo_root"
+if ! grep -Fqx "$profile_marker" "$HOME/.bash_profile" 2>/dev/null; then
+  {
+    printf '\n%s\n' "$profile_marker"
+    printf 'if [[ "$PWD" == %q || "$PWD" == %q/* ]]; then\n' "$repo_root" "$repo_root"
+    printf '  export VIRTUAL_ENV=%q\n' "$tools/venv"
+    printf '  case ":$PATH:" in\n    *:%q:*) ;;\n' "$tools/venv/bin"
+    printf '    *) export PATH=%q:"$PATH" ;;\n  esac\nfi\n' "$tools/venv/bin:$tools/bin"
+  } >> "$HOME/.bash_profile"
+fi
+echo 'Orb tools ready; new login shells in this checkout use the Python environment.'

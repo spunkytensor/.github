@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# No services or authentication to restore. Check snapshot tools without installs
+# or network access; the login-shell hook installed by setup supplies their PATH.
+tools="$HOME/.cache/amp/spunkytensor-baseline"
+"$tools/venv/bin/python" -c 'import yaml, bandit'
+test -x "$tools/bin/actionlint"
+test -x "$tools/bin/trivy"
