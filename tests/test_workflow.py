@@ -41,7 +41,7 @@ a = sys.argv[1:]
 if os.environ.get("MOCK_FAIL"):
     sys.exit(3)
 if a[0] == "version":
-    print('{"Version":"0.74.0"}')
+    print(json.dumps({"Version": os.environ.get("MOCK_VERSION", "0.76.1")}))
 else:
     output = pathlib.Path(a[a.index("--output") + 1])
     if a[0] == "convert":
@@ -66,6 +66,14 @@ else:
             result = subprocess.run(["bash", str(ROOT / "scripts/scan.sh"), "source", str(source), str(failed)], env={**env, "MOCK_FAIL": "1"}, capture_output=True)
             self.assertEqual(result.returncode, 3)
             self.assertFalse((failed / "SHA256SUMS").exists())
+            # Reject any version other than the exact reviewed security release.
+            for version in ["0.74.0", "0.76.0", "0.76.2"]:
+                mismatch = base / f"version-{version}"
+                result = subprocess.run(["bash", str(ROOT / "scripts/scan.sh"), "source", str(source), str(mismatch)], env={**env, "MOCK_VERSION": version}, capture_output=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(json.loads((mismatch / "trivy-version.json").read_text())["Version"], version)
+                self.assertFalse((mismatch / "trivy.json").exists())
+                self.assertFalse((mismatch / "SHA256SUMS").exists())
 
     def test_image_identity(self):
         for image in ["example:latest", "example@sha256:" + "a" * 63, "example\ninjected@sha256:" + "a" * 64]:
@@ -77,6 +85,9 @@ else:
         steps = workflow["jobs"]["scan"]["steps"]
         checkout = next(s for s in steps if s.get("name") == "Checkout shared tools")
         self.assertEqual(checkout["with"]["ref"], "${{ inputs.baseline-sha }}")
+        trivy = next(s for s in steps if s.get("name") == "Install pinned Trivy")
+        self.assertEqual(trivy["with"]["version"], "v0.76.1")
+        self.assertFalse(trivy["with"]["cache"])
         upload = steps[-1]
         self.assertEqual(upload["if"], "always()")
         self.assertEqual(upload["with"]["if-no-files-found"], "error")
