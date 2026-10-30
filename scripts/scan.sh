@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Standalone source/image inventory and CVE gate. Requires Trivy 0.74.0, jq,
+# Standalone source/image inventory and CVE gate. Requires Trivy 0.76.1, jq,
 # Python 3 and sha256sum. No GitHub API or token is used.
 set -euo pipefail
 if [[ $# != 3 || ( "$1" != source && "$1" != image ) ]]; then
@@ -36,7 +36,7 @@ mkdir -p "$report"
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 cd "$work"
 trivy version --format json > "$report/trivy-version.json"
-jq -e '.Version == "0.74.0"' "$report/trivy-version.json" >/dev/null
+jq -e '.Version == "0.76.1"' "$report/trivy-version.json" >/dev/null
 jq -n --arg kind "$mode" --arg subject "$subject" --arg commit "$commit" \
   --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   '{kind:$kind, subject:$subject, event_commit:$commit, generated_at:$generated}' > "$report/subject.json"
