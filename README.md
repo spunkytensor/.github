@@ -10,11 +10,21 @@ See [AGENTS.md](AGENTS.md) for policy and documentation rules.
 Install Bash, Python 3, jq, and GNU coreutils on Linux.
 Install **Trivy 0.76.1** from its official release.
 Use a reviewed checkout of this repository.
-Run these commands:
+For source scans, run:
 
 ```sh
 bash scripts/scan.sh source /path/to/project /path/to/new-report-directory
+```
+
+For image scans, run:
+
+```sh
 bash scripts/scan.sh image registry/project@sha256:PLATFORM_MANIFEST_DIGEST /path/to/new-image-reports
+```
+
+To check an existing report, run:
+
+```sh
 python3 scripts/check_report.py /path/to/new-report-directory/trivy.json
 ```
 
@@ -46,9 +56,10 @@ python3 scripts/check_scan_freshness.py --input scheduled-runs.json
 Supply your scheduler's inventory of expected repositories and checks.
 See the script's module docstring for the JSON schema.
 The check fails for missing, failed, disabled, or stale scans.
-A successful scan becomes stale after 36 hours.
+A successful scheduled run becomes stale more than 36 hours after its start.
 Local mode makes no API calls.
 GitHub mode uses `gh` with `--visibility public|private|all` and requires repository access.
+GitHub mode checks scheduled workflow runs on each repository's default branch.
 A token can omit repositories from its visible inventory.
 
 Keep `coverage.yml` **public-only**.

@@ -16,6 +16,14 @@ Setup requires internet access and Amp's x64 Debian orb template with preinstall
 
 ## Local checks
 
+For environments outside Amp orbs:
+
+1. Create a Python 3.12 virtual environment.
+2. Activate the environment.
+3. Install [actionlint 1.7.12](https://github.com/rhysd/actionlint/releases/tag/v1.7.12) from its official release.
+
+Run these checks in either environment:
+
 ```sh
 python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v

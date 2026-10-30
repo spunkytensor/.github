@@ -1,12 +1,12 @@
-Spunky Tensor shared public-repository automation
+Spunky Tensor shared repository automation
 
-This repository distributes first-party workflow definitions, documentation and
-Python scripts. It does not bundle third-party executables or Python packages.
-The following direct Python dependencies are external test/security tooling:
+This repository distributes first-party workflow definitions, documentation, and Python scripts.
+It does not bundle third-party executables or Python packages.
+These direct Python dependencies provide external test and security tools:
 
 Bandit 1.8.6 — https://github.com/PyCQA/bandit — Apache-2.0
 Upstream license: https://github.com/PyCQA/bandit/blob/1.8.6/LICENSE
-Bandit and its dependencies are installed in CI, not bundled in this archive.
+CI installs Bandit and its dependencies.
 
 PyYAML 6.0.3 — https://github.com/yaml/pyyaml — MIT
 Upstream license: https://github.com/yaml/pyyaml/blob/6.0.3/LICENSE
@@ -32,9 +32,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-GitHub Actions, Trivy, actionlint, Python, Bash, jq and the hosted runner image
-are external CI tooling, not redistributed in this repository's source archive.
-Their versions/pins are recorded in the workflow files; their upstream licenses
-continue to apply. The source dependency SBOM is not an inventory of the entire
-GitHub-hosted runner or of every transitive action dependency. A future binary or
-container distribution must inventory and attribute what it actually bundles.
+GitHub Actions, Trivy, actionlint, Python, Bash, jq, and the hosted runner image provide external CI tools.
+This repository's source archive does not redistribute these tools.
+The workflow files record tool versions and pins.
+Upstream licenses apply.
+The source dependency SBOM does not inventory the entire GitHub-hosted runner or every transitive action dependency.
+Inventory all components in binary and container distributions.
+Include required attribution for those components.

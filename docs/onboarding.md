@@ -38,7 +38,8 @@ GitHub provides best-effort schedule execution.
 
 The workflow scans the caller's event commit, including GitHub's pull-request merge commit.
 It parses dependencies without a project build or dependency installation.
-It omits submodules, LFS objects, generated dependencies, and downloaded assets.
+The checkout does not fetch submodules or LFS objects.
+The workflow does not generate dependencies or download project assets.
 Add project-specific checks for these components.
 Empty package inventories fail the check.
 For content-only projects, document why the dependency scan does not apply.

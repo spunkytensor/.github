@@ -10,7 +10,7 @@ Use local language analyzers, such as Bandit for Python.
 GitHub Actions minutes and storage can incur charges.
 The baseline requires no paid private-repository security services.
 Optional GitHub features, such as Dependabot, complement the standalone scripts.
-Configure Dependabot in each repository.
+If you use Dependabot, configure it in each repository.
 
 Protect default branches with required checks and review.
 Assign code owners for workflows and policy.
@@ -67,7 +67,7 @@ The shared workflow applies no suppressions.
 Review an exception validation mechanism before you enable exceptions.
 
 Track successful scans and failures across adopted repositories.
-Flag successful scans older than 36 hours.
+Flag successful scheduled runs more than 36 hours after their start.
 GitHub can delay or drop scheduled runs.
 GitHub can disable public-repository schedules after 60 days of inactivity.
 `coverage.yml` checks scheduled-workflow health and missing adoption across public repositories.
@@ -85,7 +85,6 @@ Generate attribution from resolved and distributed components.
 Review the attribution before release.
 
 Trivy does not generate legally sufficient notices.
-ORT with ScanCode remains a proposed toolchain that requires project trials.
 Review unknown or conflicting licenses, advertising clauses, copyleft requirements, source-delivery obligations, and model terms before release.
 The project license does not cover all third-party components.
 
@@ -109,4 +108,3 @@ Scorecard replaces neither vulnerability scans nor compliance review.
 - [GitHub security features and availability](https://docs.github.com/en/code-security/getting-started/github-security-features)
 - [GitHub default community files](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file)
 - [Trivy SBOMs](https://trivy.dev/docs/latest/supply-chain/sbom/)
-- [OSS Review Toolkit](https://oss-review-toolkit.org/ort/)

@@ -21,6 +21,8 @@
 ## Documentation style
 
 Write in ASD-STE100 Simplified Technical English, Issue 9.
+Apply these rules to editable documentation prose.
+Preserve license texts, copyright notices, and required attribution verbatim.
 
 - Put one instruction in each sentence.
 - Limit procedural sentences to 20 words.
