@@ -1,16 +1,14 @@
-# Adopting the shared baseline
+# Adopt the shared baseline
 
-Start with a pilot repository. Do not remove existing scans or notices until the
-new workflow's coverage has been compared and verified.
-The same caller supports public and private source repositories, with no paid
-GitHub security add-ons. Actions minutes/storage still follow your billing plan.
-For standalone commands and private monitoring, see the [README](../README.md).
+Start with a pilot repository.
+Verify equivalent coverage before you remove existing scans or notices.
+One workflow caller supports public and private source repositories without paid GitHub security add-ons.
+Actions minutes and storage follow your billing plan.
+See the [README](../README.md) for standalone commands and private monitoring.
 
-## Source scanning
+## Source scans
 
-Add this caller as `.github/workflows/public-repo-security.yml` in the participating project.
-Replace `REVIEWED_FULL_COMMIT_SHA` with the published baseline's 40-character
-commit SHA and change `main` if the default branch differs.
+Add this caller as `.github/workflows/public-repo-security.yml` in the project:
 
 ```yaml
 name: Spunky Tensor security
@@ -32,19 +30,22 @@ jobs:
       baseline-sha: REVIEWED_FULL_COMMIT_SHA
 ```
 
-The example runs nightly at 09:37 UTC (01:37 PST / 02:37 PDT), off the hour.
-Stagger other repositories' minutes. GitHub scheduling is best effort.
-The workflow checks out the caller's event commit, including GitHub's merge commit
-for pull requests. It parses dependencies without installing or building the
-project. Submodules, LFS objects, generated dependencies, and downloaded assets are
-not fetched; those need explicit project-specific coverage.
+Replace both `REVIEWED_FULL_COMMIT_SHA` values with the same published, reviewed 40-character baseline commit SHA.
+Replace `main` if the project uses another default branch.
+The schedule runs nightly at 09:37 UTC.
+Stagger schedule minutes across repositories.
+GitHub provides best-effort schedule execution.
 
-An empty detected package inventory fails. Content-only projects should document
-why this dependency scan does not apply, rather than manufacturing a green scan.
+The workflow scans the caller's event commit, including GitHub's pull-request merge commit.
+It parses dependencies without a project build or dependency installation.
+It omits submodules, LFS objects, generated dependencies, and downloaded assets.
+Add project-specific checks for these components.
+Empty package inventories fail the check.
+For content-only projects, document why the dependency scan does not apply.
 
 ## Released container images
 
-Add another call in the project's scheduled/release workflow:
+Add this job to the project's scheduled or release workflow:
 
 ```yaml
   runtime:
@@ -55,50 +56,59 @@ Add another call in the project's scheduled/release workflow:
       artifact-name: security-runtime-amd64
 ```
 
-Replace both placeholders with the actual image name and 64-character digest.
-Only publicly readable images are supported by this initial workflow. For each
-supported architecture, use its platform-specific manifest digest, not a mutable
-tag or a multi-platform index. Give each call a unique artifact name.
-There is no shared Docker daemon between jobs: a locally built image in a previous
-job is not available here. Build-and-scan integration is project-specific and must
-not publish untrusted pull-request images just to use this workflow.
+Set both baseline pins as specified for source scans.
+Replace `PROJECT` with the image name.
+Replace `RELEASE_MANIFEST_DIGEST` with its 64-character platform manifest digest.
+Use one call per supported architecture.
+Give each call a unique artifact name.
+The reusable workflow supports publicly readable images only.
+Use platform manifest digests instead of mutable tags or multi-platform index digests.
+Jobs share no Docker daemon.
+Use project-local integration for images that require a build or authentication.
+For private images, run the standalone script after registry login.
+Private registry access uses the runner's Docker credential store.
+Keep credentials out of image names.
+The reusable workflow accepts no registry secrets.
+Keep untrusted pull-request images out of public registries.
 
 ## Evidence and permissions
 
-Each call uploads `sbom.spdx.json`, `sbom.cdx.json`, `trivy.json`,
-`trivy-version.json`, `subject.json`, and `SHA256SUMS` when generated. Reports stay
-available for 30 days (subject to GitHub retention policy), even after a CVE gate
-failure. Setup or download failures can leave only partial evidence; the job still
-fails. Full JSON includes all vulnerability severities. No secrets are needed and
-the workflow neither publishes releases nor uploads SARIF to GitHub code scanning.
+Each call uploads these files when the scan generates them:
 
-The scan runs outside the checked-out source so caller `trivy.yaml` and ignore
-files cannot silently change central policy. Repository-specific suppression and
-VEX support are deliberately not enabled in this first version.
+- `sbom.spdx.json` and `sbom.cdx.json`
+- `trivy.json` and `trivy-version.json`
+- `subject.json` and `SHA256SUMS`
 
-## Before claiming adoption
+The caller repository retains reports for 30 days, subject to GitHub retention policy, including after vulnerability check failures.
+Setup or download failures can leave partial evidence and fail the job.
+Trivy JSON includes all vulnerability severities.
+The workflow requires no secrets and publishes neither releases nor SARIF.
+The scan runs outside the source directory.
+Caller configuration and ignore files cannot change the shared policy.
+The shared workflow supports neither repository-specific suppressions nor VEX inputs.
 
-- Confirm a confidential vulnerability reporting route and the project's security
-  policy. GitHub private reporting is optional where available; a confirmed private
-  maintainer channel also works. Publish a shared SECURITY.md only after its route
-  has been confirmed.
-- No Dependency Graph, dependency-review, hosted CodeQL, or Advanced Security
-  enablement is required. Verify check names from real workflow runs before applying
-  branch rules. Remove service-dependent jobs from callers only with an explicit
-  review of replacement coverage; updating the shared SHA does not remove them.
-- Keep local licenses/notices and project-specific legal review. Existing local
-  community files override the organization defaults; remove them only after
-  reviewing the information that would be lost.
-- Compare source and runtime coverage with the previous scanner. Verify one
-  known-vulnerable case fails and scanner failures cannot pass.
-- Integrate full inventory reconciliation, attribution generation, and durable
-  release assets/attestations. The reusable scan alone does not complete these.
-- Record the owner, supported releases, baseline SHA, coverage gaps, and last
-  successful nightly scan. The central freshness reporter discovers this caller
-  path across all active public repositories and flags missing or stale scheduled
-  successes. Subscribe to failed Actions runs and verify the reporter itself
-  remains active before claiming continuously monitored coverage.
+## Adoption checklist
 
-Publishing this repository activates supported community defaults for repositories
-without local overrides, including private repositories under this owner. It does
-not enable scanning, change settings, or grant write access to other repositories.
+- Confirm a confidential vulnerability reporting route.
+- Document the project's security policy.
+- Confirm the private route before you publish a shared SECURITY.md.
+- Verify check names from workflow runs before you set branch rules.
+- Update branch rules when check names change.
+- Review replacement coverage before you remove local security jobs.
+- Keep project-local licenses, notices, and legal review.
+- Review local community files before removal.
+  Local files override shared defaults.
+- Compare source and runtime coverage with existing scanners.
+- Verify that a known vulnerability fails the check.
+- Verify that scanner failures fail the check.
+- Integrate inventory reconciliation and attribution generation.
+- Publish durable release evidence.
+- Record the owner, supported releases, baseline commit SHA, coverage gaps, and last successful nightly scan.
+- Subscribe to failed Actions runs.
+- Verify the freshness reporter's activity.
+  It detects this caller path across active public repositories and flags missing or stale scheduled successes.
+
+Community-file defaults apply to repositories without local overrides, including private repositories under this owner.
+They enable no scans, change no repository settings, and grant no cross-repository write access.
+Workflow adoption requires an explicit caller.
+Baseline pin updates preserve local security jobs.

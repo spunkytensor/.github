@@ -1,14 +1,14 @@
 # Support
 
-Use the affected project's README for setup and troubleshooting instructions.
-For a reproducible bug, open an issue in that project with its version, relevant
-environment details, reproduction steps, and expected versus actual behavior.
+Use the project's README for setup and troubleshooting.
+Report reproducible bugs in that project's issues.
+Include the version, environment, reproduction steps, expected behavior, and actual behavior.
 Remove credentials, personal data, and private source code from logs.
 
-For vulnerabilities, follow that project's security policy or use **Security →
-Report a vulnerability** when available. Do not disclose vulnerabilities through
-public support issues. If no private route is available, request a private contact
-without including vulnerability details.
+Follow the project's security policy for vulnerabilities.
+Use **Security → Report a vulnerability** when available.
+Keep vulnerability details out of public issues.
+Request a private contact if the project provides no private reporting route.
 
-Support is provided on a best-effort basis. A public repository or an automated
-scan does not establish a support contract or a guarantee of security.
+Maintainers provide support on a best-effort basis.
+A public repository or automated scan provides no support contract or security guarantee.
