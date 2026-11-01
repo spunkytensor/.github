@@ -107,7 +107,7 @@ The shared workflow supports neither repository-specific suppressions nor VEX in
 - Record the owner, supported releases, baseline commit SHA, coverage gaps, and last successful nightly scan.
 - Subscribe to failed Actions runs.
 - Verify the freshness reporter's activity.
-  It detects this caller path across active public repositories and flags missing or stale scheduled successes.
+  It detects this caller path across active public repositories and flags missing or stale successes of scheduled or manual runs.
 
 Community-file defaults apply to repositories without local overrides, including private repositories under this owner.
 They enable no scans, change no repository settings, and grant no cross-repository write access.
