@@ -67,7 +67,7 @@ The shared workflow applies no suppressions.
 Review an exception validation mechanism before you enable exceptions.
 
 Track successful scans and failures across adopted repositories.
-Flag successful scheduled runs more than 36 hours after their start.
+Flag successful scheduled or manual runs more than 36 hours after their start.
 GitHub can delay or drop scheduled runs.
 GitHub can disable public-repository schedules after 60 days of inactivity.
 `coverage.yml` checks scheduled-workflow health and missing adoption across public repositories.

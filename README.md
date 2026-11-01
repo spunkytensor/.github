@@ -56,10 +56,11 @@ python3 scripts/check_scan_freshness.py --input scheduled-runs.json
 Supply your scheduler's inventory of expected repositories and checks.
 See the script's module docstring for the JSON schema.
 The check fails for missing, failed, disabled, or stale scans.
-A successful scheduled run becomes stale more than 36 hours after its start.
+A successful run becomes stale more than 36 hours after its start.
 Local mode makes no API calls.
 GitHub mode uses `gh` with `--visibility public|private|all` and requires repository access.
-GitHub mode checks scheduled workflow runs on each repository's default branch.
+GitHub mode checks scheduled and manual workflow runs on each repository's default branch.
+To confirm a fix, start the workflow manually on the default branch.
 A token can omit repositories from its visible inventory.
 
 Keep `coverage.yml` **public-only**.

@@ -34,7 +34,7 @@ is::
 shown run fields except ``html_url`` are required. Repositories and checks are
 an explicit expected inventory; local mode never claims discovery. Empty
 inventories, malformed values, and future run start timestamps fail closed.
-``created_at`` is the scheduled run start time.
+``created_at`` is the run start time.
 """
 
 import argparse
@@ -55,6 +55,9 @@ EXTRA_WORKFLOWS = {
     "spunkytensor/reel-maestro": [".github/workflows/security.yml", ".github/workflows/container.yml"],
     "spunkytensor/reel-video": [".github/workflows/security.yml"],
 }
+# A manual dispatch on the default branch runs the same full scan as the
+# schedule, so a maintainer can confirm a fix without waiting for the schedule.
+EVENTS = ("schedule", "workflow_dispatch")
 
 
 def api(endpoint, paginate=False):
@@ -70,17 +73,17 @@ def assess(workflow, latest, success, now):
     if workflow["state"] != "active":
         return f"DISABLED: {workflow['state']}"
     if latest and latest["status"] == "completed" and latest["conclusion"] != "success":
-        return f"FAILED: latest scheduled run concluded {latest['conclusion']}"
+        return f"FAILED: latest scheduled or manual run concluded {latest['conclusion']}"
     if not success:
-        return "MISSING: no successful scheduled run"
+        return "MISSING: no successful scheduled or manual run"
     # Use start/creation time, not completion time: a long-running stale scan
     # must not become fresh merely because it finally completed.
     started = dt.datetime.fromisoformat(success["created_at"].replace("Z", "+00:00"))
     if now - started > MAX_AGE:
-        return "STALE: last successful scheduled run started over 36 hours ago"
+        return "STALE: last successful scheduled or manual run started over 36 hours ago"
     if latest and latest["status"] != "completed":
         return "OK: previous successful scan is fresh; next run is pending"
-    return "OK: successful scheduled run within 36 hours"
+    return "OK: successful scheduled or manual run within 36 hours"
 
 
 def inspect_workflow(repo, workflow, now):
@@ -88,12 +91,14 @@ def inspect_workflow(repo, workflow, now):
     if not workflow or workflow["state"] != "active":
         return assess(workflow, None, None, now), repo["html_url"] + "/actions"
     branch = quote(repo["default_branch"], safe="")
-    endpoint = (f"repos/{name}/actions/workflows/{workflow['id']}/runs"
-                f"?branch={branch}&event=schedule&per_page=1")
-    latest_runs = api(endpoint)["workflow_runs"]
-    successful_runs = api(endpoint + "&status=success")["workflow_runs"]
-    latest = latest_runs[0] if latest_runs else None
-    success = successful_runs[0] if successful_runs else None
+    endpoint = f"repos/{name}/actions/workflows/{workflow['id']}/runs?branch={branch}&per_page=1"
+
+    def newest(query):
+        runs = [run for event in EVENTS for run in api(f"{endpoint}{query}&event={event}")["workflow_runs"]]
+        return max(runs, key=lambda run: run["created_at"], default=None)
+
+    latest = newest("")
+    success = newest("&status=success")
     return assess(workflow, latest, success, now), (
         latest["html_url"] if latest else repo["html_url"] + "/actions"
     )
